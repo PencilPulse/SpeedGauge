@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SpeedGaugeView">
+        <attr name="defaultSpeed" format="float" />
+        <attr name="gaugeStrokeWidth" format="dimension" />
+        <attr name="textSize" format="dimension" />
+        <attr name="needleColor" format="color" />
+        <attr name="textColor" format="color" />
+        <attr name="animationDuration" format="integer" />
+        <attr name="showText" format="boolean" />
+    </declare-styleable>
+</resources>
