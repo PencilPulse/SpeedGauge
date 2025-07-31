@@ -13,6 +13,7 @@ import kotlin.math.min
 import com.ease.speedgauge.R
 import com.example.speedgauge.model.SpeedRange
 import com.example.speedgauge.model.toSegment
+import androidx.core.graphics.toColorInt
 
 class SpeedGaugeView @JvmOverloads constructor(
     context: Context,
@@ -79,9 +80,9 @@ class SpeedGaugeView @JvmOverloads constructor(
         // Default segments with both active and inactive colors
         setSegments(listOf(
             SpeedGaugeSegment(0f, 5f, Color.LTGRAY, Color.RED),
-            SpeedGaugeSegment(5f, 10f, Color.LTGRAY, Color.parseColor("#FF8C00")), // Dark Orange
+            SpeedGaugeSegment(5f, 10f, Color.LTGRAY, "#FF8C00".toColorInt()), // Dark Orange
             SpeedGaugeSegment(10f, 20f, Color.LTGRAY, Color.YELLOW),
-            SpeedGaugeSegment(20f, 30f, Color.LTGRAY, Color.parseColor("#90EE90")), // Light Green
+            SpeedGaugeSegment(20f, 30f, Color.LTGRAY, "#90EE90".toColorInt()), // Light Green
             SpeedGaugeSegment(30f, 50f, Color.LTGRAY, Color.GREEN),
             SpeedGaugeSegment(50f, 100f, Color.LTGRAY, Color.BLUE)
         ))
@@ -157,10 +158,11 @@ class SpeedGaugeView @JvmOverloads constructor(
         rect.set(centerX - radius, centerY - radius, centerX + radius, centerY + radius)
         
         val totalAngle = 180f
-        val needleAngle = totalAngle * (currentSpeed / maxSpeed)
+        val totalRange = maxSpeed - minValue
+        val needleAngle = totalAngle * ((currentSpeed - minValue) / totalRange)
         
-        // First draw all segments in inactive color
-        segments.forEachIndexed { index, segment ->
+        // Draw inactive segments
+        segments.forEach { segment ->
             paint.apply {
                 color = segment.inactiveColor
                 style = Paint.Style.STROKE
@@ -168,16 +170,16 @@ class SpeedGaugeView @JvmOverloads constructor(
                 strokeCap = Paint.Cap.ROUND
             }
             
-            val segmentStartAngle = 180f + (index * (totalAngle / segments.size))
-            val sweepAngle = totalAngle / segments.size
-            canvas.drawArc(rect, segmentStartAngle, sweepAngle, false, paint)
+            val segmentStartAngle = 180f + (totalAngle * (segment.startValue - minValue) / totalRange)
+            val segmentSweepAngle = totalAngle * (segment.endValue - segment.startValue) / totalRange
+            canvas.drawArc(rect, segmentStartAngle, segmentSweepAngle, false, paint)
         }
         
-        // Then draw the active portion up to the needle position
-        segments.forEachIndexed { index, segment ->
-            val segmentStartAngle = 180f + (index * (totalAngle / segments.size))
-            val sweepAngle = totalAngle / segments.size
-            val segmentEndAngle = segmentStartAngle + sweepAngle
+        // Draw active segments
+        segments.forEach { segment ->
+            val segmentStartAngle = 180f + (totalAngle * (segment.startValue - minValue) / totalRange)
+            val segmentSweepAngle = totalAngle * (segment.endValue - segment.startValue) / totalRange
+            val segmentEndAngle = segmentStartAngle + segmentSweepAngle
             
             if (needleAngle >= segmentStartAngle - 180f) {
                 paint.apply {
@@ -198,30 +200,27 @@ class SpeedGaugeView @JvmOverloads constructor(
         
         // Draw text labels
         if (showText) {
-            val sweepAnglePerSegment = totalAngle / segments.size
-            segments.forEachIndexed { index, segment ->
-                val startAngle = 180f + (index * sweepAnglePerSegment)
+            segments.forEach { segment ->
+                val startAngle = 180f + (totalAngle * (segment.startValue - minValue) / totalRange)
                 val textAngle = Math.toRadians(startAngle.toDouble())
-                // Add extra padding for edge values
                 val textRadius = radius + gaugeStrokeWidth + 
-                    (if (index == 0 || index == segments.size - 1) gaugeStrokeWidth * 0.5f else 0f)
+                    (if (segment.startValue == minValue || segment.endValue == maxSpeed) gaugeStrokeWidth * 0.5f else 0f)
                 val textX = (centerX + textRadius * Math.cos(textAngle)).toFloat()
                 val textY = (centerY + textRadius * Math.sin(textAngle)).toFloat()
                 
-                // Adjust text alignment and position for edge cases
                 textPaint.textAlign = when {
-                    startAngle <= 185f -> Paint.Align.LEFT  // First value
-                    startAngle >= 355f -> Paint.Align.RIGHT // Last value
+                    startAngle <= 185f -> Paint.Align.LEFT
+                    startAngle >= 355f -> Paint.Align.RIGHT
                     else -> Paint.Align.CENTER
                 }
                 
                 canvas.drawText(valueFormatter(segment.startValue), textX, textY, textPaint)
             }
             
-            // Draw max value with more padding and adjusted angle
+            // Draw max value
             textPaint.textAlign = Paint.Align.RIGHT
-            val lastTextAngle = Math.toRadians(355.0) // Moved slightly to the left
-            val lastTextRadius = radius + gaugeStrokeWidth * 2f // Increased padding
+            val lastTextAngle = Math.toRadians(355.0)
+            val lastTextRadius = radius + gaugeStrokeWidth * 2f
             val lastTextX = (centerX + lastTextRadius * Math.cos(lastTextAngle)).toFloat()
             val lastTextY = (centerY + lastTextRadius * Math.sin(lastTextAngle)).toFloat()
             canvas.drawText(valueFormatter(maxSpeed), lastTextX, lastTextY, textPaint)

@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private val updateSpeed = object : Runnable {
         override fun run() {
-            val randomSpeed = Random.nextFloat() * 100
+            val randomSpeed =  50f
             speedGauge.setSpeed(randomSpeed)
             handler.postDelayed(this, 1000)
         }
@@ -30,14 +30,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSpeedGauge() = with(speedGauge) {
         minValue = 0f
-        maxValue = 100f
+        maxValue = 100f  // Set max to 50 to match total range
 
         listOf(
-            SpeedRange(0f, 5f, R.color.red),
-            SpeedRange(5f, 10f, R.color.orange),
-            SpeedRange(10f, 20f, R.color.yellow),
-            SpeedRange(20f, 30f, R.color.light_green),
-            SpeedRange(30f, 50f, R.color.green)
+            SpeedRange(0f, 1f, R.color.red),
+            SpeedRange(1f, 5f, R.color.orange),
+            SpeedRange(5f, 10f, R.color.yellow),
+            SpeedRange(10f, 20f, R.color.light_green),
+            SpeedRange(20f, 50f, R.color.green),
+            SpeedRange(50f, 100f, R.color.green)
         ).let { addRanges(it) }
     }
 
